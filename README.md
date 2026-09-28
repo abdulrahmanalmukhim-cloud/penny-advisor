@@ -1,51 +1,27 @@
-import { NextRequest, NextResponse } from "next/server";
-import yahooFinance from "yahoo-finance2";
+# Penny Advisor 📈
 
-export async function GET(request: NextRequest) {
-  const symbol = request.nextUrl.searchParams.get("symbol")?.trim().toUpperCase() || "AAPL";
+لوحة عربية متجاوبة لتحليل أسهم البيني ستوك الأمريكية.
 
-  try {
-    const quote = await yahooFinance.quote(symbol);
-    const chart = await yahooFinance.chart(symbol, { interval: "1d", range: "1mo" });
+## ما يعمل حالياً
 
-    const closes =
-      chart.quotes
-        ?.map((item) => item.close ?? item.adjclose ?? null)
-        .filter((value): value is number => typeof value === "number")
-        .slice(-30) ?? [];
+- جلب السعر والحجم وحالة السوق من Yahoo Finance عبر Server Route.
+- بحث عن أي رمز سهم أمريكي من خانة التحليل.
+- حساب تقريبي لـ VWAP ومستويات الدعم والمقاومة من بيانات الشهر الأخير.
+- واجهة عربية مناسبة للجوال.
 
-    const current = quote.regularMarketPrice ?? 0;
-    const previousClose = quote.regularMarketPreviousClose ?? current;
-    const changePercent = previousClose ? ((current - previousClose) / previousClose) * 100 : 0;
+## التشغيل محلياً
 
-    const vwap = closes.length ? closes.reduce((total, value) => total + value, 0) / closes.length : current;
-    const support = closes.length ? Math.min(...closes) : current * 0.97;
-    const resistance = closes.length ? Math.max(...closes) : current * 1.03;
+```bash
+npm install
+npm run dev
+```
 
-    const response = {
-      symbol: quote.symbol ?? symbol,
-      price: current,
-      previousClose,
-      changePercent,
-      volume: quote.regularMarketVolume ?? 0,
-      avgVolume: quote.averageDailyVolume3Month ?? 0,
-      marketState: quote.marketState ?? "CLOSED",
-      currency: quote.currency ?? "USD",
-      vwap,
-      support,
-      resistance,
-      notes:
-        `السهم ${symbol} يتم تحليله عبر بيانات Yahoo Finance. راقب الاتجاه فوق VWAP والـ volume، وتحقق من التقارير والملفات الرسمية قبل اتخاذ قرار تداول.`,
-    };
+ثم افتح `http://localhost:3000`.
 
-    return NextResponse.json(response);
-  } catch (error) {
-    return NextResponse.json(
-      {
-        error: "تعذر جلب بيانات السهم. تأكد من رمز السهم أو حاول لاحقاً.",
-        detail: error instanceof Error ? error.message : String(error),
-      },
-      { status: 500 }
-    );
-  }
-}
+## ملاحظات البيانات
+
+Yahoo Finance قد يعرض بيانات مؤخرة أو محدودة حسب السوق والمنطقة، لذلك لا تعتبرها بثاً لحظياً مضموناً. للاستخدام الإنتاجي أو التداول الفعلي استخدم مزود بيانات مرخصاً باتفاقية السوق المناسبة، وأضف مفتاحه في متغيرات البيئة على الخادم فقط.
+
+القيم المعروضة لـ VWAP والدعم والمقاومة تحليل تقريبي للـ MVP وليست بديلاً عن شارت احترافي أو بيانات Tick حقيقية.
+
+> المشروع تعليمي وشخصي، ولا يقدم توصية مالية أو ضماناً للنتائج. لا تُضف مفاتيح API إلى كود المتصفح.
