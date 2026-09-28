@@ -1,5 +1,1 @@
-import { getMarketQuote } from "@/lib/market";
-
-export async function getQuoteData(symbol: string) {
-  return getMarketQuote(symbol);
-}
+// This file is no longer needed - API is in src/app/api/quote/route.ts
